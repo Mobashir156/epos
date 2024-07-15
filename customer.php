@@ -6,14 +6,21 @@ $db = new DatabaseConnection;
 if (isset($_GET['customer_id'])) {
     $customer_id = $_GET['customer_id'];
     $result = $db->fetchBalance($customer_id);
-    echo json_encode(['balance' => $result['balance'], 'previous_due' => $result['due']]);
+    echo json_encode([
+        'balance' => $result['balance'],
+        'previous_due' => $result['due']
+    ]);
 } else {
-    
     $customers = $db->fetchcustomers();
-    $options = '';
+    $customerOptions = [];
+
     foreach ($customers as $customer) {
-        $options .= '<option value="' . $customer['id'] . '">' . $customer['name'] . '</option>';
+        $customerOptions[] = [
+            'id' => $customer['id'],
+            'name' => $customer['name']
+        ];
     }
-    echo $options;
+
+    echo json_encode(['customers' => $customerOptions]);
 }
 ?>

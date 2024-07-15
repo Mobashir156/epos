@@ -119,6 +119,7 @@ class DatabaseConnection {
             $row = $result->fetch_assoc();
             $balance = $row['balance'];
             $due = $row['due'];
+            $mobile = $row['mobile'];
         }
         
         $stmt->close();
