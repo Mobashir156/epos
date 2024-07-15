@@ -203,7 +203,7 @@
                             <div class="input-group-prepend">
                               <div class="input-group-text" style="width: 100px;">Discount %</div>
                             </div>
-                            <input class="form-control text-success text-right font-weight-bold discount" autocomplete="off"   type="text" id="discount" name="discount" >
+                            <input class="form-control text-success text-right font-weight-bold discount" autocomplete="off"   type="text" id="discount" name="discount" readonly>
                           <input class="form-control text-success text-right font-weight-bold less" style=" margin-left: 5px; border-radius: 6px; "  placeholder="Less" autocomplete="off"   type="text" id="less" name="less" >
 
                           </div>
@@ -793,45 +793,87 @@ $('#results').on('click', '.search-result-item', function() {
         });
     }
 
-     $('#discount, #shipping, #paid, #previous_due').on('input', function() {
+$(document).ready(function() {
+    // Initial calculation call
+    add_calcualte();
+
+    // Event listeners for discount, shipping, paid, and previous_due input fields
+    $('#discount, #shipping, #paid, #previous_due').on('input', function() {
         add_calcualte();
     });
 
-    // Assuming you also want to re-calculate when qty or sale inputs change
+    // Re-calculate when qty or sale inputs change
     $(document).on('input', "input[name='qty[]'], input[name='sale[]']", function() {
         add_calcualte();
     });
 
-    function add_calcualte() {
-        var grandTotal = 0;
-        $("input[name='qty[]']").each(function (index) {
-            var qty = $("input[name='qty[]']").eq(index).val();
-            var buy = $("input[name='sale[]']").eq(index).val();
-            var output = parseFloat(parseFloat(qty) * parseFloat(buy)).toFixed(2);
-            if (!isNaN(output)) {
-                $("input[name='sub_buy[]']").eq(index).val(output);
-                grandTotal = parseFloat(parseFloat(grandTotal) + parseFloat(output)).toFixed(2);
-            }
-        });
+    // Event listeners for discount and less input fields
+    $('#discount').on('input', function() {
+        // Clear the 'less' input field when 'discount' is being used
+        $('#less').val('');
+        add_calcualte();
+    });
 
-        var commission = +$("#discount").val() || 0;
-        var shipping = +$("#shipping").val() || 0;
-        var paid = +$("#paid").val() || 0;
-        var predue = +$("#previous_due").val() || 0;
+    $('#less').on('input', function() {
+        // Clear the 'discount' input field when 'less' is being used
+        $('#discount').val('');
+        add_calcualte();
+    });
 
-        $('#sub_total').val(grandTotal);
-        $('#total').val(grandTotal - commission + shipping);
-        $('#due').val(grandTotal - commission + shipping - paid + predue);
-        $('#payable').val(grandTotal - commission + shipping - paid + predue);
-    }
-
-    // Initial calculation call
-    add_calcualte();
-
+    // Event listener for delete buttons
     $(document).on('click', '.deleteBtn', function() {
         $(this).closest('tr').remove();
         add_calcualte();
     });
+});
+
+function add_calcualte() {
+    var grandTotal = 0;
+
+    // Calculate sub_total for each product
+    $("input[name='qty[]']").each(function (index) {
+        var qty = parseFloat($(this).val()) || 0;
+        var buy = parseFloat($("input[name='sale[]']").eq(index).val()) || 0;
+        var output = (qty * buy).toFixed(2);
+        if (!isNaN(output)) {
+            $("input[name='sub_buy[]']").eq(index).val(output);
+            grandTotal += parseFloat(output);
+        }
+    });
+
+    // Retrieve discount values
+    var discountPercent = parseFloat($("#discount").val()) || 0;
+    var lessAmount = parseFloat($("#less").val()) || 0;
+
+    // Calculate discount value based on percentage
+    var discountValue = (discountPercent / 100) * grandTotal;
+
+    // If less amount is provided, calculate the corresponding discount percentage
+    if (lessAmount > 0) {
+        discountValue = lessAmount;
+        discountPercent = (lessAmount / grandTotal) * 100;
+        // Update the discount input field with the calculated percentage
+        $("#discount").val(discountPercent.toFixed(2));
+    }
+
+    // Retrieve other charges and payments
+    var shipping = parseFloat($("#shipping").val()) || 0;
+    var paid = parseFloat($("#paid").val()) || 0;
+    var predue = parseFloat($("#previous_due").val()) || 0;
+
+    // Calculate the final totals
+    var totalAfterDiscount = grandTotal - discountValue;
+    var totalWithShipping = totalAfterDiscount + shipping;
+    var totalDue = totalWithShipping - paid + predue;
+
+    // Update the respective input fields with fixed decimal points
+    $('#sub_total').val(grandTotal.toFixed(2));
+    $('#total').val(totalWithShipping.toFixed(2));
+    $('#due').val(totalDue.toFixed(2));
+    $('#payable').val(totalDue.toFixed(2));
+}
+
+
 });
 </script>
 <script>

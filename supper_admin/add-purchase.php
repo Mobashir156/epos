@@ -206,17 +206,17 @@ include('include/head.php');
                     data: { query: query },
                     dataType: 'json',
                     success: function(response) {
-                        console.log('Response:', response); 
-                        let resultBox = $('#result');
-                        resultBox.html('');
-                        if(response.products && response.products.length > 0) {
-                            response.products.forEach(product => {
-                                resultBox.append(`<li class="search-result-item" data-product='${JSON.stringify(product)}'>${product.name}</li>`);
-                            });
-                        } else {
-                            resultBox.append('<li>No results found</li>');
-                        }
-                    },
+                    console.log('Response:', response);
+                    let resultBox = $('#result');
+                    resultBox.html('');
+                    if(response.products && response.products.length > 0) {
+                        response.products.forEach(product => {
+                            resultBox.append(`<li class="search-result-item" data-product='${JSON.stringify(product)}'>${product.name}</li>`);
+                        });
+                    } else {
+                        resultBox.append('<li>No results found</li>');
+                    }
+                },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', status, error); // Log AJAX errors for debugging
                         console.error('Response Text:', xhr.responseText); // Log the response text for debugging
@@ -230,15 +230,22 @@ include('include/head.php');
         // Add product to the table
         $('#result').on('click', '.search-result-item', function() {
             let product = $(this).data('product');
-            console.log('Selected Product:', product); // Log the selected product for debugging
+        console.log('Selected Product:', product);
+            let existingRow = $('#p_add_table').find(`tr[data-product-id="${product.id}"]`);
+
+        if (existingRow.length > 0) {
+            let qtyInput = existingRow.find('input[name="qty[]"]');
+            let newQty = parseInt(qtyInput.val()) + 1;
+            qtyInput.val(newQty);
+        } else {
             let row = `
-                <tr class="productRow">
+                <tr class="productRow" data-product-id="${product.id}">
                     <td style='text-align: center'>
                         <div class="deleteBtn" data-product-id="${product.id}">
                             <i class="fa fa-trash"></i>
                         </div>
                     </td>
-                    <td>1</td>
+                    <td class="serial-number"></td>
                     <input type='hidden' readonly value='${product.id}' name='product_id[]' class='table_input'>
                     <td><input type='text' readonly value='${product.barcode}' name='product_barcode[]' class='table_input'></td>
                     <td><input type='text' value='${product.name}' name='product_name[]' class='table_input'></td>
@@ -250,6 +257,8 @@ include('include/head.php');
                     <td><input type='number' value='' name='sub_buy[]' readonly class='table_input_number sub_buy'></td>
                 </tr>`;
             $('#p_add_table').append(row);
+            updateSerialNumbers();
+        }
             $('#result').html('');
             $('#search').val('');
             add_calcualte();
@@ -320,6 +329,11 @@ include('include/head.php');
               }
           });
         });
+        function updateSerialNumbers() {
+        $('#p_add_table tr').each(function(index) {
+            $(this).find('.serial-number').text(index + 1);
+        });
+    }
     });
 </script>
 
